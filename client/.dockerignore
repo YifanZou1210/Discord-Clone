@@ -1,0 +1,6 @@
+# client/.dockerignore
+node_modules
+dist
+.git
+.vscode
+.env
