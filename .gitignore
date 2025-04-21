@@ -12,12 +12,12 @@ docker-compose.*.local.yml
 .docker
 
 # 3. 构建产物
-client/dist
-server/build
+frontend/dist
+backend/build
 
 # 4. Node.js 依赖
-client/node_modules
-server/node_modules
+frontend/node_modules
+backend/node_modules
 
 # 5. 日志、临时文件
 *.log

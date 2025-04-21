@@ -13,7 +13,7 @@ services:
   # 2. 后端服务
   server:
     build:
-      context: ./server # Dockerfile 所在目录
+      context: ./backend # Dockerfile 所在目录
     env_file:
       - .env # 根目录下的 .env，包含 MONGO_URI、PORT 等
     ports:
@@ -24,7 +24,7 @@ services:
   # 3. 前端服务
   client:
     build:
-      context: ./client
+      context: ./frontend
     ports:
       - '3000:80' # 构建后用 Nginx 监听 80 → 本地 3000
     depends_on:
