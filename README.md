@@ -1,4 +1,7 @@
-# WeChat Clone / 微信克隆项目
+# Realtime Discord Clone
+
+> try to transfer to cross-platform app between web, mobile and desktop, deploy on aws
+> 目前尝试升级为网页/移动端和桌面端的三方跨平台 app，并在 AWS 上部署
 
 ## Tech Stack / 技术栈
 
