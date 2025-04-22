@@ -36,6 +36,7 @@ export const generateToken = (userId, res) => {
     secure: process.env.NODE_ENV !== "development" 
     // 非开发环境下强制 HTTPS 传输
   });
+  // 注意：即使 payload、secret 相同，只要生成时间不同，token 就不同。这是 JWT 的特性，保证每个 token 是一次性的、不可伪造的、可追踪的
 
   // ────────────────────────────────────────────────────────
   // 返回 token，以备其他业务逻辑（如在响应体中也返回）使用
