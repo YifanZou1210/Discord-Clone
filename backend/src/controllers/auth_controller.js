@@ -1,7 +1,7 @@
 import { generateToken } from "../lib/utils.js"
 import User from "../models/user_model.js"
 import bcrypt from "bcryptjs"
-// import cloudinary from "../lib/cloudinary.js"
+import cloudinary from "../lib/cloudinary.js"
 
 // 注册逻辑
 export const signup = async (req, res) => {
@@ -50,6 +50,7 @@ export const signup = async (req, res) => {
   }
 }
 // 登录逻辑
+// 登录时无需带 token；登录成功后你才获得 token。此后，你才在请求中通过 Authorization: Bearer token 或 cookie 来证明你是谁。
 export const login = async (req, res) => {
   // 登录在mongoDB中检查是否target email存在
   const { email, password } = req.body
@@ -79,6 +80,11 @@ export const login = async (req, res) => {
   }
 }
 
+// 登出逻辑
+// 1. 由于我们使用httpOnly cookie, loggout时只需要后端控制前端不必要操作
+// 2. 如果使用 localstorage, 登出时前后端都必须清除否则存在xss风险，不用localstorage存储敏感token特别是带权限信息的access token
+// 3. 在无状态的JWT方案中，登出只需要在client/server端清除cookies不必再次发送token
+// 4. 如果实现了token撤销(黑名单)或者refresh token旋转策略，那么登出时需要将当前token发送给服务器以便服务器标记为已失效
 export const logout = (req, res) => {
   try {
     res.cookie("jwt", "", { maxAge: 0 })
@@ -88,35 +94,43 @@ export const logout = (req, res) => {
     res.status(500).json({ message: "Internal Server Error" })
   }
 }
+// 更新profile逻辑
+export const updateProfile = async (req, res) => {
+  try {
+    const { profilePic } = req.body
+    const userId = req.user._id
 
-// export const updateProfile = async (req, res) => {
-//   try {
-//     const { profilePic } = req.body
-//     const userId = req.user._id
+    if (!profilePic) {
+      return res.status(400).json({ message: "Profile pic is required" })
+    }
 
-//     if (!profilePic) {
-//       return res.status(400).json({ message: "Profile pic is required" })
-//     }
+    // 上传到 Cloudinary
+    //    - cloudinary.uploader.upload 会把图片推送到云端存储
+    //    - 返回值 uploadResponse 包含 secure_url、public_id 等信息
+    // ─────────────────────────────────────────────────────────────
+    const uploadResponse = await cloudinary.uploader.upload(profilePic)
+    // uploadResponse.secure_url 是 HTTPS 安全链接，用作用户头像地址
 
-//     const uploadResponse = await cloudinary.uploader.upload(profilePic)
-//     const updatedUser = await User.findByIdAndUpdate(
-//       userId,
-//       { profilePic: uploadResponse.secure_url },
-//       { new: true }
-//     )
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { profilePic: uploadResponse.secure_url },//更新内容：新头像
+      { new: true }
+    )
 
-//     res.status(200).json(updatedUser)
-//   } catch (error) {
-//     console.log("error in update profile:", error)
-//     res.status(500).json({ message: "Internal server error" })
-//   }
-// }
+    res.status(200).json(updatedUser)
+  } catch (error) {
+    console.log("error in update profile:", error)
+    res.status(500).json({ message: "Internal server error" })
+  }
+}
 
-// export const checkAuth = (req, res) => {
-//   try {
-//     res.status(200).json(req.user)
-//   } catch (error) {
-//     console.log("Error in checkAuth controller", error.message)
-//     res.status(500).json({ message: "Internal Server Error" })
-//   }
-// }
+export const checkAuth = (req, res) => {
+  try {
+    // 将protectRoute挂载的req.user已经验证的用户信息原封不动的返回给前端
+    // 目的是确认client持有的JWT的合法性，并把当前用户的非敏感信息
+    res.status(200).json(req.user)
+  } catch (error) {
+    console.log("Error in checkAuth controller", error.message)
+    res.status(500).json({ message: "Internal Server Error" })
+  }
+}
